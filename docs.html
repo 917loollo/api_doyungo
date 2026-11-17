@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>개발자 문서 · DOYUNGO MAPS</title><link rel="stylesheet" href="style.css">
+</head><body>
+<header class="bar"><b>DOYUNGO MAPS</b><a href="index.html">지도</a><a href="admin.html">관리자</a></header>
+<main>
+<h1>DOYUNGO MAPS API 2.0</h1>
+<p>MapTiler 지도 타일을 API 키로 보호해서 제공합니다. 키는 관리자 페이지에서 발급합니다.</p>
+
+<h2>서버 상태</h2>
+<pre><code>GET /api/health</code></pre>
+
+<h2>지도 타일</h2>
+<pre><code>GET /api/tiles/{style}/{z}/{x}/{y}.png?key=발급받은키</code></pre>
+<p>키는 <code>?key=</code> 쿼리 또는 <code>x-api-key</code> 헤더로 보냅니다.</p>
+<table>
+<tr><th>style</th><th>설명</th><th>확장자</th></tr>
+<tr><td><code>streets</code></td><td>일반 지도</td><td>png</td></tr>
+<tr><td><code>satellite</code></td><td>위성 지도</td><td>jpg</td></tr>
+<tr><td><code>terrain</code></td><td>지형 지도</td><td>png</td></tr>
+<tr><td><code>topo</code></td><td>등고선 지도</td><td>png</td></tr>
+</table>
+
+<h2>예시</h2>
+<pre><code>curl -H "x-api-key: dyg_xxxxxxxx" \
+  https://내도메인/api/tiles/streets/7/108/50.png -o tile.png</code></pre>
+
+<h2>Leaflet</h2>
+<pre><code>L.tileLayer("https://내도메인/api/tiles/streets/{z}/{x}/{y}.png?key=dyg_xxxxxxxx").addTo(map);</code></pre>
+
+<h2>오류 코드</h2>
+<table>
+<tr><td><code>401</code></td><td>키가 없거나 유효하지 않음</td></tr>
+<tr><td><code>403</code></td><td>비활성화된 키</td></tr>
+<tr><td><code>429</code></td><td>일일 요청 한도 초과</td></tr>
+</table>
+</main></body></html>

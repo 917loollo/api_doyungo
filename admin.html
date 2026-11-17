@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>관리자 · DOYUNGO MAPS</title><link rel="stylesheet" href="style.css">
+</head><body>
+<header class="bar"><b>DOYUNGO MAPS</b><a href="index.html">지도</a><a href="docs.html">개발자 문서</a></header>
+<main>
+<h1>API 키 관리</h1>
+<div class="row"><input id="token" type="password" placeholder="관리자 토큰"><button id="login">로그인</button></div>
+<p class="msg" id="msg"></p>
+<section id="panel" hidden>
+  <h2>새 API 키 발급</h2>
+  <div class="row"><input id="name" placeholder="키 이름 (예: 내 앱)"><button id="create">새 API 키 발급</button></div>
+  <div id="newKey"></div>
+  <h2>발급된 키 <span class="pill" id="limit"></span></h2>
+  <div style="overflow-x:auto"><table><thead><tr><th>이름</th><th>키</th><th>오늘 사용량</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+</section>
+<script>
+const $ = id => document.getElementById(id);
+let token = "";
+async function api(method, body) {
+  const r = await fetch("/api/admin/keys", { method, headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json(); if (!r.ok) throw new Error(j.error || "오류"); return j;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function refresh() {
+  const { keys, dailyLimit } = await api("GET");
+  $("limit").textContent = "일일 한도 " + dailyLimit;
+  $("rows").innerHTML = keys.length ? keys.map(k => `<tr>
+    <td>${esc(k.name)}${k.active ? "" : ' <span class="pill">비활성</span>'}</td>
+    <td><code>${esc(k.key)}</code></td><td>${k.usageToday}</td>
+    <td><button class="ghost" data-t="${esc(k.key)}" data-a="${!k.active}">${k.active ? "비활성화" : "활성화"}</button>
+        <button class="danger" data-d="${esc(k.key)}">삭제</button></td></tr>`).join("")
+    : '<tr><td colspan="4">아직 발급된 키가 없습니다. 위에서 새 키를 발급하세요.</td></tr>';
+}
+$("login").onclick = async () => {
+  token = $("token").value.trim(); $("msg").textContent = "";
+  try { await refresh(); $("panel").hidden = false; } catch (e) { $("msg").textContent = e.message; }
+};
+$("create").onclick = async () => {
+  try {
+    const j = await api("POST", { name: $("name").value });
+    $("newKey").innerHTML = `<p>새 키가 발급되었습니다. 복사해서 안전한 곳에 보관하세요.</p><pre><code>${esc(j.key)}</code></pre>`;
+    $("name").value = ""; await refresh();
+  } catch (e) { $("msg").textContent = e.message; }
+};
+$("rows").onclick = async e => {
+  const t = e.target.dataset;
+  try {
+    if (t.t) await api("PATCH", { key: t.t, active: t.a === "true" });
+    if (t.d && confirm("이 키를 삭제할까요?")) await api("DELETE", { key: t.d });
+    await refresh();
+  } catch (err) { $("msg").textContent = err.message; }
+};
+</script>
+</main></body></html>
